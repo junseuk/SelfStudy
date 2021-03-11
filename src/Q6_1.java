@@ -18,13 +18,13 @@ class SutdaCard {
 		this(1, true);
 	}
 	SutdaCard(int num, boolean isKwang) {
-		this.num = num;
-		this.isKwang = isKwang;
+		this.NUM = num;
+		this.ISKWANG = isKwang;
 	}
-	int num;
-	boolean isKwang;
+	final int NUM;
+	final boolean ISKWANG;
 	public String toString() {
-		return num + (isKwang ? "K" : "");
+		return NUM + (ISKWANG ? "K" : "");
 	}
 }
 
