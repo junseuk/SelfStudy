@@ -16,16 +16,15 @@ var baseURL string = "https://syllabus.sfc.keio.ac.jp/courses?button=&locale=en&
 var secondbaseURL string = "&search%5Bobjective%5D=&search%5Bsemester%5D=&search%5Bsub_semester%5D=&search%5Bsummary%5D=&search%5Bteacher_name%5D=&search%5Btitle%5D=&search%5Byear%5D=2021"
 
 type extractedCourse struct {
-	url            string
-	title          string
-	department     string
-	field          string
-	unit           string
-	professor      string
-	classformat    string
-	period         string
-	language       string
-	englishsupport string
+	url         string
+	title       string
+	department  string
+	field       string
+	unit        string
+	professor   string
+	classformat string
+	period      string
+	language    string
 }
 
 func main() {
@@ -46,7 +45,7 @@ func writeCourse(courses []extractedCourse) {
 	checkerr(err)
 	w := csv.NewWriter(file)
 	defer w.Flush()
-	headers := []string{"URL", "Title", "Department", "Field", "Credit", "Professor", "Class Format", "Period", "Language", "English Support"}
+	headers := []string{"URL", "Title", "Department", "Field", "Credit", "Professor", "Class Format", "Period", "Language"}
 	wErr := w.Write(headers)
 	checkerr(wErr)
 	for _, course := range courses {
@@ -58,8 +57,7 @@ func writeCourse(courses []extractedCourse) {
 			course.professor,
 			course.classformat,
 			course.period,
-			course.language,
-			course.englishsupport}
+			course.language}
 		cwErr := w.Write(courseSlice)
 		checkerr(cwErr)
 	}
@@ -90,53 +88,47 @@ func getPage(page int, mainc chan<- []extractedCourse) {
 func extractCourse(card *goquery.Selection, c chan<- extractedCourse) {
 	url, _ := card.Find(".detail-btn").Attr("href")
 	title := cleanString(card.Find("h2").Text())
-	var detail [12]string
-	count := 0
-	extractDetailofCourse := card.Find("dd")
-	numdd := card.Find("dd").Length()
-	fmt.Println(numdd)
+
+	extractDetailofCourse := card.Find("dt")
+	//numdd := card.Find("dd").Length()
+	var detail [7]string
+	//detail := make([]string, numdd)
 	extractDetailofCourse.Each(func(i int, detailcard *goquery.Selection) {
-		if count == 12 {
-			count = 0
+		switch cleanString(detailcard.Text()) {
+		case "Department Name":
+			detail[0] = cleanString(detailcard.Next().Text())
+		case "Field (Undergraduate)":
+			detail[1] = cleanString(detailcard.Next().Text())
+		case "Unit":
+			detail[2] = cleanString(detailcard.Next().Text())
+		case "Lecture Name":
+			detail[3] = cleanString(detailcard.Next().Text())
+		case "Class Format":
+			detail[4] = cleanString(detailcard.Next().Text())
+		case "Day of Week・Period":
+			detail[5] = cleanString(detailcard.Next().Text())
+		case "Language":
+			detail[6] = cleanString(detailcard.Next().Text())
 		}
-		detail[count] = cleanString(detailcard.Text())
-		count++
 	})
 	department := detail[0]
-	field := detail[2]
-	unit := detail[3]
-	professor := detail[5]
-	classformat := detail[6]
-	period := detail[8]
-	language := detail[10]
-	englishsupport := detail[11]
+	field := detail[1]
+	unit := detail[2]
+	professor := detail[3]
+	classformat := detail[4]
+	period := detail[5]
+	language := detail[6]
 	c <- extractedCourse{
-		url:        url,
-		title:      title,
-		department: department,
-		field:      field, unit: unit,
-		professor:      professor,
-		classformat:    classformat,
-		period:         period,
-		language:       language,
-		englishsupport: englishsupport}
+		url:         url,
+		title:       title,
+		department:  department,
+		field:       field,
+		unit:        unit,
+		professor:   professor,
+		classformat: classformat,
+		period:      period,
+		language:    language}
 }
-
-/*
-func getPages() int {
-	numpages := 0
-	res, err := http.Get(baseURL)
-	checkerr(err)
-	checkcode(res)
-	defer res.Body.Close()
-	doc, err := goquery.NewDocumentFromReader(res.Body)
-	checkerr(err)
-	doc.Find(".pagination").Each(func(i int, s *goquery.Selection) {
-		numpages = s.Find("a").Length()
-	})
-	return numpages
-}
-*/
 
 func checkerr(err error) {
 	if err != nil {
