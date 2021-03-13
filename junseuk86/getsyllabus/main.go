@@ -90,9 +90,7 @@ func extractCourse(card *goquery.Selection, c chan<- extractedCourse) {
 	title := cleanString(card.Find("h2").Text())
 
 	extractDetailofCourse := card.Find("dt")
-	//numdd := card.Find("dd").Length()
 	var detail [7]string
-	//detail := make([]string, numdd)
 	extractDetailofCourse.Each(func(i int, detailcard *goquery.Selection) {
 		switch cleanString(detailcard.Text()) {
 		case "Department Name":
