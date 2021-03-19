@@ -26,6 +26,13 @@ class SutdaCard {
 	public String toString() {
 		return NUM + (ISKWANG ? "K" : "");
 	}
+	public boolean equals(Object obj) {
+		if (obj instanceof SutdaCard) {
+			SutdaCard c = (SutdaCard) obj;
+			return (this.NUM == c.NUM && this.ISKWANG == c.ISKWANG);
+		} else
+			return false;
+	}
 }
 
 class SutdaDeck {
