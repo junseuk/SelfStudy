@@ -11,9 +11,9 @@
 
 /*
 Each thread targets a certain age range and sort individually
-threadAgeStart = each thread's start point
+threadAgeStart = each thread's start point of age
 threadWorkAmount = each thread's age range of work
-printOrder = order of which thread should do printf first.
+printOrder = order of which thread should do printf first
 countThread = count how many threads are being processed to set order of each thread
 */
 int maxAge;
@@ -22,7 +22,7 @@ int threadWorkAmount;
 int printOrder = NUM_THREADS - 1;
 int countThread = 0;
 pthread_mutex_t master_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t master_lock2 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t print_lock = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct node {
   char name[32];
@@ -81,13 +81,11 @@ node *ReadNodeDate(node *Top) {
   return (Top);
 }
 
-// print = 0
-// order = 0
-// order = 1
-// order = 2
-// order = 3
-// order = 4
-
+/*
+Each thread will copy the linked list whose age is in thread's range of age
+And run sortList() individually
+When sorting process is done, they will print their own result in order
+*/
 void *myThread(void *Top) {
   int order;
   int min;
@@ -102,6 +100,7 @@ void *myThread(void *Top) {
   node *newTop = (node*) NULL;
   node *newNode;
   int max = min + threadWorkAmount;
+  //Copy data
   for (temp = originalTop;temp != NULL;temp = temp -> next) {
     if (temp -> age < max && temp -> age >= min) {
       if (newTop == NULL) {
@@ -117,15 +116,17 @@ void *myThread(void *Top) {
       newNode -> age = temp -> age;
     }
   }
+  //Sort data
   newTop = sortList(newTop); 
+  //Wait for the turn and print the result
   while(1) {
     if (order == printOrder) {
-      pthread_mutex_lock(&master_lock2);
+      pthread_mutex_lock(&print_lock);
       for (newNode = newTop; newNode != NULL; newNode = newNode->next) {
         printf("%s\t%c\t%d\n", newNode->name, newNode->sex, newNode->age);
       }
       printOrder--;
-      pthread_mutex_unlock(&master_lock2);
+      pthread_mutex_unlock(&print_lock);
       break;
     }
   }
@@ -195,9 +196,7 @@ void freeData(node* Top) {
   }
 }
 
-//./mkdata words.txt | head -100 | ./sort
-int main()
-{
+int main() {
   node *Top;
   node *newNode;
   pthread_t threads[NUM_THREADS];
@@ -206,8 +205,6 @@ int main()
   Top = (node *)NULL;
   Top = ReadNodeDate(Top);
   threadWorkAmount = ceil((maxAge+1)/NUM_THREADS);
-  printf("maxAge: %d\n", maxAge);
-  printf("threadWorkAmount: %d\n", threadWorkAmount);
   //Create threads
   for (int i = 0 ; i < NUM_THREADS ; i++ ) {
     rc = pthread_create(&threads[i], NULL, myThread, (void*) Top); assert(rc == 0);
@@ -216,6 +213,7 @@ int main()
   for (int i = 0 ; i < NUM_THREADS ; i++ ) {
     rc = pthread_join(threads[i], NULL); assert(rc == 0);
   }
+  //Free original data
   freeData(Top);
   return 0;
 }
